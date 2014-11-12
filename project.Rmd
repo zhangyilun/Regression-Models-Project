@@ -1,0 +1,117 @@
+---
+title: "Report for Motor Trend"
+author: "Yilun Zhang"
+date: "Tuesday, November 04, 2014"
+output: pdf_document
+---
+
+#### Objectives
+
+This is the report for Motor Trend, a magazine about the automobile industry. This report aims to answer the following two questions:
+
+1. Is an automatic or manual transmission better for MPG
+
+2. Quantification of the MPG difference between automatic and manual transmissions
+
+## Load and view data
+
+```{r}
+data <- mtcars
+head(data)
+```
+
+## Modification of data
+
+We noticed that the input data has all columns being numberic, the following code will modify some of the data types to factors in order to process further analysis.
+
+```{r}
+data$cyl <- factor(data$cyl)
+data$vs <- factor(data$vs)
+data$am <- factor(data$am)
+data$gear <- factor(data$gear)
+data$carb <- factor(data$carb)
+```
+
+## Exploratory data analysis
+
+First, we will conduct some exploratory analysis on our data to get familiarize with it. Mainly, we are looking at mpg and am.
+
+```{r,fig.height=5,fig.width=10}
+par(mfrow=c(1,2))
+hist(data$mpg,main="Histogram of mpg")
+plot(data$mpg,data$am,main="Scatterplot of mpg vs. am")
+par(mfrow=c(1,1))
+boxplot(data$mpg~data$am,main="Boxplot of mpg by am",xlab="Auto(0)/Manual(1)",ylab="mpg")
+```
+
+## Question 1
+
+By looking at the figures above, we noticed that, from the boxplot, manual transmission has a higher median mpg value than automatic transmission. We conclude at this point that manual transmission has a better mpg than automatic transmission
+
+## Question 2
+
+Let's formally analyse if there is a difference between the two types of transmissions on mpg.
+
+#### Mean Comparison
+
+```{r}
+mean(data[data$am == 0,]$mpg)
+mean(data[data$am == 1,]$mpg)
+```
+
+Manual transmission has a mean value of 24.39231 but automatic transmission only has a mean of 17.14737.
+
+#### T Test
+
+```{r}
+t.test(data[data$am == 0,]$mpg,data[data$am == 1,]$mpg,alternative="less")
+```
+
+The one sided t-test retuen a p-value of 0.001374, which rejected the null hypothesis of no difference and favors that manual transmission has a better mpg than automatic transmission.
+
+#### Regression modelling
+
+```{r}
+fit1 <- lm(mpg~am,data=mtcars)
+summary(fit1)$coef
+fit2 <- lm(mpg~am-1,data=mtcars)
+summary(fit2)$coef
+```
+
+We have fitted two models:
+
+* fit1 has an intercept and the slope
+
+* fit2 has only the slope (goes throuth the origin)
+
+```{r}
+summary(fit1)$sigma
+summary(fit2)$sigma
+```
+
+By looking at the coefficient summary of all three models, auto/manual is significantly important in both models (all have p-value <0.05).
+
+By looking at the residual standard errors of the two SLRs (Simple Linear Regression), fit1 has a smaller value.
+
+```{r}
+anova(fit1,fit2)
+```
+
+Anova F test returns an f-value of less than 0.05, which indicates that two models are significantly different, so reducing the intercept causes an sigficant change in the model. Therefore, fit1 is the better model.
+
+Finally, let's check the residual of fit1.
+
+```{r,fig.height=5,fig.width=10}
+par(mfrow=c(1,2))
+plot(fit1,which=2)
+plot(fit1,which=4)
+shapiro.test(fit1$residuals)
+```
+
+From thel left QQ plot, we can see that the residuals are approximately normal, the Shapiro-Wilk test also confirms that the residuals are normal (p-value of larger than 0.05).
+
+The cook's distance plot shows that there are no extreme values in residual, so the residual looks quite good.
+
+## Summary
+
+In conclusion, by comparing the mean mpg of auto/manual, fitting regression models on them, we conclude that manual transmission has better mpg than auto transmission.
